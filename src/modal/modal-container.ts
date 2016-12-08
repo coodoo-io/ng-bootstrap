@@ -1,3 +1,4 @@
+import {NgbModalStack} from './modal-stack';
 import {
   Directive,
   Injector,
@@ -15,7 +16,6 @@ import {ContentRef} from '../util/popup';
 
 import {NgbModalBackdrop} from './modal-backdrop';
 import {NgbModalWindow} from './modal-window';
-import {NgbModalStack} from './modal-stack';
 import {NgbActiveModal, NgbModalRef} from './modal-ref';
 
 @Directive({selector: 'template[ngbModalContainer]'})
@@ -25,10 +25,9 @@ export class NgbModalContainer {
 
   constructor(
       private _injector: Injector, private _renderer: Renderer, private _viewContainerRef: ViewContainerRef,
-      private _componentFactoryResolver: ComponentFactoryResolver, ngbModalStack: NgbModalStack) {
+      private _componentFactoryResolver: ComponentFactoryResolver, private ngbModalStack: NgbModalStack) {
     this._backdropFactory = _componentFactoryResolver.resolveComponentFactory(NgbModalBackdrop);
     this._windowFactory = _componentFactoryResolver.resolveComponentFactory(NgbModalWindow);
-
     ngbModalStack.registerContainer(this);
   }
 
@@ -42,15 +41,21 @@ export class NgbModalContainer {
 
     if (options.backdrop !== false) {
       backdropCmptRef = this._viewContainerRef.createComponent(this._backdropFactory, 0, this._injector);
+      backdropCmptRef.instance.elevation = this.ngbModalStack.getElevation();
     }
 
-    windowCmptRef = this._viewContainerRef.createComponent(
-        this._windowFactory, this._viewContainerRef.length - 1, this._injector, contentRef.nodes);
+    windowCmptRef = this._viewContainerRef.createComponent(this._windowFactory, 0, this._injector, contentRef.nodes);
 
     ngbModalRef = new NgbModalRef(this._viewContainerRef, windowCmptRef, contentRef, backdropCmptRef);
 
-    activeModal.close = (result: any) => { ngbModalRef.close(result); };
-    activeModal.dismiss = (reason: any) => { ngbModalRef.dismiss(reason); };
+    activeModal.close = (result: any) => {
+      ngbModalRef.close(result);
+      this.ngbModalStack.removeTopmostFromStack();
+    };
+    activeModal.dismiss = (reason: any) => {
+      ngbModalRef.dismiss(reason);
+      this.ngbModalStack.removeTopmostFromStack();
+    };
 
     this._applyWindowOptions(windowCmptRef.instance, options);
 

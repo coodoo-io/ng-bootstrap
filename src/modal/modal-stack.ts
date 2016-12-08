@@ -6,6 +6,7 @@ import {NgbModalContainer} from './modal-container';
 @Injectable()
 export class NgbModalStack {
   private modalContainer: NgbModalContainer;
+  private modalRefs: Array<NgbModalRef> = [];
 
   open(moduleCFR: ComponentFactoryResolver, contentInjector: Injector, content: any, options = {}): NgbModalRef {
     if (!this.modalContainer) {
@@ -13,7 +14,18 @@ export class NgbModalStack {
           'Missing modal container, add <template ngbModalContainer></template> to one of your application templates.');
     }
 
-    return this.modalContainer.open(moduleCFR, contentInjector, content, options);
+    let modalRef = this.modalContainer.open(moduleCFR, contentInjector, content, options);
+    this.addToStack(modalRef);
+    return modalRef;
+  }
+
+  public addToStack(modalRef: NgbModalRef): void { this.modalRefs.push(modalRef); };
+
+  public removeTopmostFromStack() { this.modalRefs.pop(); };
+
+  public getElevation() {
+    console.log(this.modalRefs.length);
+    return this.modalRefs.length;
   }
 
   registerContainer(modalContainer: NgbModalContainer) { this.modalContainer = modalContainer; }
